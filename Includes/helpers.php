@@ -8,12 +8,15 @@ define('SESSION_ABSOLUTE_TIMEOUT', 24 * 60 * 60); // 24 hours absolute max (opti
 
 function start_secure_session(): void {
     if (session_status() === PHP_SESSION_NONE) {
-        // Secure cookie params — adjust domain/path as needed
+        // Force PHP to only use cookies for session IDs (no URL-based)
+        ini_set('session.use_only_cookies', 1);
+
+        // Secure cookie params
         $cookieParams = session_get_cookie_params();
         $cookieParams['httponly'] = true;
         $cookieParams['secure'] = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
-        // Recommended SameSite attribute where supported:
-        // Use "Lax" for general usage; "Strict" may break cross-site flows.
+
+        // SameSite support
         if (PHP_VERSION_ID >= 70300) {
             session_set_cookie_params([
                 'lifetime' => $cookieParams['lifetime'] ?? 0,
@@ -24,7 +27,6 @@ function start_secure_session(): void {
                 'samesite' => 'Lax'
             ]);
         } else {
-            // fallback for older PHP: samesite not supported by session_set_cookie_params
             session_set_cookie_params(
                 $cookieParams['lifetime'] ?? 0,
                 $cookieParams['path'] . '; samesite=Lax',
@@ -33,9 +35,8 @@ function start_secure_session(): void {
                 $cookieParams['httponly']
             );
         }
-        session_start();
-        // Don't allow session fixation via URL
-        ini_set('session.use_only_cookies', 1);
+
+        session_start(); // safe now, after ini_set and params
     }
 }
 
