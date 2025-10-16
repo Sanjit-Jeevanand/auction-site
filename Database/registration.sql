@@ -48,3 +48,7 @@ CREATE TABLE users (
   INDEX idx_country (country),
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE users
+ADD COLUMN reset_token VARCHAR(128) DEFAULT NULL,
+ADD COLUMN reset_expires DATETIME DEFAULT NULL;
