@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 $_SESSION = [];
 if (ini_get('session.use_cookies')) {
     $params = session_get_cookie_params();

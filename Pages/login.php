@@ -1,6 +1,7 @@
 <?php
-require_once __DIR__ . '/includes/db.php';
-require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/header.php';
 
 $errors = [];
 
@@ -20,9 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!$user['is_email_confirmed']) {
             $errors[] = 'Please confirm your email before logging in.';
         } else {
-            session_regenerate_id(true);
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['role'] = $user['role'];
+            login_user((int)$user['user_id'], $user['role']);
             $pdo->prepare("UPDATE users SET last_login_at = NOW() WHERE user_id = :id")->execute(['id' => $user['user_id']]);
             header('Location: profile.php');
             exit;
@@ -46,6 +45,9 @@ $csrf = csrf_token();
     <div class="mb-3"><label>Email</label><input name="email" type="email" class="form-control" required></div>
     <div class="mb-3"><label>Password</label><input name="password" type="password" class="form-control" required></div>
     <button class="btn btn-primary">Login</button>
+    <div class="mt-2">
+      <a href="forgot_password.php">Forgot password?</a>
+    </div>
   </form>
 </div>
 </body>
