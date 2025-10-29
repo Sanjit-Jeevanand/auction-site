@@ -7,20 +7,59 @@ USE auction_db;
 -- Table 1: USERS
 -- Stores all system user information including buyers, sellers and administrators
 -- ============================================
+
+-- ============================================
+-- USERS TABLE (FINAL VERSION)
+-- ============================================
+
 CREATE TABLE users (
-  user_id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  username      VARCHAR(50)  NOT NULL,
-  email         VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  role          ENUM('buyer','seller','admin') NOT NULL DEFAULT 'buyer',
-  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uk_users_username (username),
-  UNIQUE KEY uk_users_email (email),
+  user_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-  INDEX idx_users_role (role)
-) ENGINE=InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+  -- primary contact / authentication
+  email VARCHAR(255) NOT NULL UNIQUE,        -- primary email (login)
+  alt_email VARCHAR(255) DEFAULT NULL,       -- optional alternate email
+  password_hash VARCHAR(255) NOT NULL,       -- password_hash()
 
+  -- personal / profile information
+  title VARCHAR(20) DEFAULT NULL,            -- Mr / Ms / Dr / etc
+  first_name VARCHAR(100) DEFAULT NULL,
+  last_name VARCHAR(100) DEFAULT NULL,
+  display_name VARCHAR(120) DEFAULT NULL,
+  date_of_birth DATE DEFAULT NULL,           -- for age checks
+  phone VARCHAR(30) DEFAULT NULL,
+  country VARCHAR(100) DEFAULT NULL,
+  language VARCHAR(50) DEFAULT 'en',         -- preferred language
+  currency CHAR(3) DEFAULT 'GBP',            -- preferred currency (ISO)
+  profile_json JSON DEFAULT NULL,            -- flexible profile extension
 
+  -- account metadata
+  role ENUM('buyer','seller','both','admin') NOT NULL DEFAULT 'buyer',
+  is_email_confirmed TINYINT(1) NOT NULL DEFAULT 0,
+  email_confirmation_token VARCHAR(128) DEFAULT NULL,
+  subscribe_updates TINYINT(1) NOT NULL DEFAULT 1, -- opt-in for newsletters / alerts
+  is_verified TINYINT(1) NOT NULL DEFAULT 0,       -- ID/doc verification status
+
+  -- password reset / recovery
+  reset_token VARCHAR(128) DEFAULT NULL,
+  reset_expires DATETIME DEFAULT NULL,
+
+  -- security & login protection
+  failed_login_attempts INT NOT NULL DEFAULT 0,
+  locked_until DATETIME DEFAULT NULL,
+
+  -- timestamps
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  last_login_at DATETIME DEFAULT NULL,
+
+  -- indexes for performance
+  INDEX idx_role (role),
+  INDEX idx_country (country),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+  
 -- ============================================
 -- Table 2: CATEGORIES
 -- Stores classification information of auction items and supports hierarchical structure

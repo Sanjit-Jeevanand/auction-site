@@ -1,6 +1,6 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
-
+require_once __DIR__ . '/logger.php';
 // Optional: check if user logged in
 $is_logged_in = !empty($_SESSION['user_id']);
 $current_role = $_SESSION['role'] ?? null;
