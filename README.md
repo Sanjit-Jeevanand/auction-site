@@ -191,21 +191,11 @@ auction-site/
 
 ---
 
-## 📚 Academic Requirements
-- Coursework: **COMP0178 Web Development Project**  
-- Role: *Member C – User Management & Security Module*  
-- Deliverables:
-  - Complete codebase (PHP + SQL)
-  - Report (architecture, features, and security)
-  - Video demo showcasing registration, login, session timeout, and password reset flows.
-
----
-
 ## 👥 Authors
 **Group Project Members**
 - Member A — Auction Management & Items Module  
 - Member B — Bidding & Transaction Module  
-- **Member C — User Management & Security Module (You)**  
+- Member C — User Management & Security Module
 - Member D — Search, Filtering & Watchlist Module  
 - Member E — UI/UX & Testing Module  
 
