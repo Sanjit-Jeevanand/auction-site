@@ -1,11 +1,15 @@
 <?php
 session_start();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_id_to_auction'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_id_to_auction']) && isset($_POST['item_name_to_auction'])) {
     
     $item_id = filter_var($_POST['item_id_to_auction'], FILTER_SANITIZE_NUMBER_INT);
+    $item_name = trim($_POST['item_name_to_auction'] ?? '');
+    $seller_id = $_POST['seller_id_for_auction'];
 
-    $_SESSION['item_to_auction_id'] = $item_id;
+
+    $_SESSION['item_id_to_auction'] = $item_id;
+    $_SESSION['item_name_to_auction'] = $item_name;
 
     header("Location: create_auction.php");
     exit;

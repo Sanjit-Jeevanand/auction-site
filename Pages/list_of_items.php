@@ -11,7 +11,6 @@ if (!$current_seller_id) {
 }
 ?>
 
-
 <html>
 <div class="item-list-container">
     <h2>Your Listings (Seller ID: <?php echo htmlspecialchars($current_seller_id); ?>)</h2>
@@ -57,7 +56,8 @@ if (!$current_seller_id) {
 
                     <div class="item-actions">
                             <form action="set_auction_session.php" method="POST" style="display:inline;">
-                            <input type="hidden" name="item_id_to_auction" value="<?php echo $item['item_id']; ?>">
+                                <input type="hidden" name="item_id_to_auction" value="<?php echo $item['item_id']; ?>">
+                                <input type="hidden" name="item_name_to_auction" value="<?php echo $item['image_url']; ?>">
                             <button type="submit" class="btn btn-success">
                                 Auction Item
                             </button>
