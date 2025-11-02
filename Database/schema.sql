@@ -75,6 +75,22 @@ CREATE TABLE categories (
   UNIQUE KEY uk_cat_name_parent (name, parent_category_id)
 ) ENGINE=InnoDB;
 
+INSERT INTO categories (category_id, name, parent_category_id) VALUES
+(1, 'Electronics & Technology', NULL),
+(2, 'Fashion & Apparel', NULL);
+
+INSERT INTO categories (category_id, name, parent_category_id) VALUES
+(3, 'Computers', 1),
+(4, 'Mobile Devices', 1),
+(5, 'Gaming', 1),
+(6, 'Console Systems', 1),
+(7, 'Video Games', 1);
+
+INSERT INTO categories (category_id, name, parent_category_id) VALUES
+(8, 'Luxury Handbags', 2),
+(9, 'Watches', 2),
+(10, 'Jewelry', 2);
+
 -- ============================================
 -- Table 3: ITEMS
 -- Store information about items to be auctioned
