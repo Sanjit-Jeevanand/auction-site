@@ -11,24 +11,94 @@ $seller_id = current_user_id();
 $item_id = $_SESSION['item_id_to_auction'];
 $item_name = $_SESSION['item_name_to_auction'];
 
+$all_errors = [];
+
+
 if (isset($_POST['submit_auction'])) {
+
+    $session_errors = [];
+    $time_errors = [];
+    $price_errors = [];
+    $status_errors = [];
+
+    if (!$item_id || !$seller_id) {
+        $session_errors[] = "Missing required auction data. (Item ID or seller ID)";
+    }
     
+    //handle start price and reserve price validation
     $starting_price = trim($_POST['startprice'] ?? '');
     $reserve_price = trim($_POST['reserveprice'] ?? '');
-    $start_time = trim($_POST['starttime'] ?? '');
-    $end_time = trim($_POST['endtime'] ?? '');
+
+    if(!is_numeric($starting_price) || $starting_price <= 0){
+        $price_errors[] = "Starting price needs to be a valid number greater than 0";
+    }
+
+    if (!is_numeric($reserve_price) || $reserve_price <=0) {
+        $price_errors[] = "Reserve price must be a valid number greater than 0";
+    }
+
+    if (empty($price_errors)) {
+        $start_float = floatval($starting_price);
+        $reserve_float = floatval($reserve_price);
+
+        if($start_float >= $reserve_float) {
+            $price_errors[] = "Starting price must be less than reserve price";
+        }
+    }
+
+    $current_date = new DateTime();
+
+    // handle start time and end time validation
+    $starttime = trim($_POST['starttime'] ?? '');
+    $endtime = trim($_POST['endtime'] ?? '');
+
+    $start_time = htmlspecialchars($starttime, ENT_QUOTES, 'UTF-8');
+    $end_time = htmlspecialchars($endtime, ENT_QUOTES, 'UTF-8');
+
+    if (empty($start_time) || empty ($end_time)){
+        $time_errors[] = "Both start time and end time dates are required. ";
+    }
+
+    if (empty($time_errors)){
+        try {
+            $start_date = new DateTime($start_time);
+            $end_date = new DateTime($end_time);
+
+            if($start_date < $current_date){
+                $time_errors[] = "Start time cannot be in the past";
+            }
+
+            if ($start_date >= $end_date){
+                $time_errors[] = "Start time must be before the end time date";
+            }
+            else {
+                $time_success = "Date range is valid";
+            }
+        }
+        catch (Exception $e) {
+            $time_errors[] = "One or both dates are in an invalid format. Please use the YYYY-MM-DD format";
+        }
+        
+    }
+
+        // handle auction status
     $auction_status = trim($_POST['auction_status'] ?? '');
+
+    if (empty($auction_status)){
+        $status_errors[] = "Auction status is required. Please select 'Scheduled' or 'Cancelled'";
+    }
+    
+    // handle auction timestamp
     date_default_timezone_set('Europe/London');
     $auction_timestamp = date('Y-m-d H:i:s');
 
-    unset($_SESSION['item_to_auction_id']); 
-    unset($_SESSION['item_name_to_auction']);
 
-    if (!$item_id || !$seller_id || !is_numeric($starting_price) || empty($end_time)) {
-        $error = "Missing required auction data.";
-    }
+    $all_errors = array_merge($session_errors,$time_errors,$price_errors,$status_errors);
 
-    if (!isset($error)) {
+    if (empty($all_errors)) {
+
+        unset($_SESSION['item_to_auction_id']); 
+        unset($_SESSION['item_name_to_auction']);
 
         $sql_insert_auction = "INSERT INTO auctions 
         (item_id, seller_id,starting_price,reserve_price, start_time,end_time, current_status, created_at)
@@ -39,8 +109,8 @@ if (isset($_POST['submit_auction'])) {
         $auction_params = [
             'item_id'=> $item_id,
             'seller_id' => $seller_id,
-            'starting_price' => $starting_price,
-            'reserve_price' => $reserve_price,
+            'starting_price' => $start_float,
+            'reserve_price' => $reserve_float,
             'start_time' => $start_time,
             'end_time' => $end_time,
             'current_status' => $auction_status,
@@ -56,17 +126,19 @@ if (isset($_POST['submit_auction'])) {
                 exit; 
                 
             } catch (PDOException $e) {
-                $error = "Database Error: Auction creation failed. Please check your SQL log.";
+                $general_db_error = "Database Error: Auction creation failed. Please check your SQL log.";
+                $all_errors[] = $general_db_error;
             }
     } 
-else {
-        echo "<p>Error: Could not determine which item to auction. Please select an item from the listings page.</p>";
+}
+
+if (!$item_id || !$seller_id) {
+    if (!isset($_POST['submit_auction'])) { 
         header("Location: list_of_items.php"); 
         exit;
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -77,11 +149,25 @@ else {
         <title>Auction your item></title>
         <!--link to our stylesheet-->
         <!-- <link rel="stylesheet" href="css/main.css"> -->
+         <style>
+            .error { color: red; font-weight: bold; }
+            .success { color: green; font-weight: bold; }
+        </style>
 </head>
+
+
 
 <body>
 
     <section class"wrapper-main">
+
+        <?php if (!empty($all_errors)): ?>
+            <?php foreach ($all_errors as $error): ?>
+                <p class="error"><?php echo $error; ?></p>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
+
         <form action="create_auction.php" method="post">
 
             <p class="item_id">Auction item id <?php echo $item_id; ?></p>
@@ -112,10 +198,7 @@ else {
             <br><br>
             <input type="radio",id="scheduled"name="auction_status"value="scheduled">
             <label for="message">Scheduled</label>
-            <input type="radio",id="running"name="auction_status"value="running">
-            <label for="message">Running</label>
-            <input type="radio",id="ended"name="auction_status"value="ended">
-            <label for="message">Ended</label>
+
             <input type="radio",id="cancelled"name="auction_status"value="cancelled">
             <label for="message">Cancelled</label>
             <br></br>

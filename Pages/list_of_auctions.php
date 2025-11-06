@@ -45,7 +45,6 @@ require_once __DIR__ . '/../includes/header.php';
                 <tr>
                     <td><?php echo htmlspecialchars($auction['auction_id']); ?></td>
                     <td>
-                        <a href="item_details.php?item_id=<?php echo htmlspecialchars($auction['item_id']); ?>">
                             <?php echo htmlspecialchars($auction['item_id']); ?>
                         </a>
                     </td>
@@ -61,6 +60,9 @@ require_once __DIR__ . '/../includes/header.php';
                         </strong>
                     </td>
                     <td><?php echo htmlspecialchars($auction['current_status']); ?></td>
+                    <td><button type="submit" class="btn btn-success">
+                                Bid Item
+                    </button></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
