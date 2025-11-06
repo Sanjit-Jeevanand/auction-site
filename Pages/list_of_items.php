@@ -15,6 +15,11 @@ if (!$current_seller_id) {
 <div class="item-list-container">
     <h2>Your Listings (Seller ID: <?php echo htmlspecialchars($current_seller_id); ?>)</h2>
 
+    <p>
+    <a href="create_item.php" class="btn btn-success">
+        Add new item
+    </a>
+    </p>
     <?php
 
     $sql_get_items = "SELECT i.item_id,i.title,i.description,i.`condition`, i.created_at,ii.url as image_url,c.name as category_name
