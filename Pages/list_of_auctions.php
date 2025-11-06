@@ -8,6 +8,28 @@ require_once __DIR__ . '/../includes/header.php';
 
 <?php
 
+    date_default_timezone_set('Europe/London');
+    $current_time = date('Y-m-d H:i:s');
+
+    // update ended auctions
+    $sql_update_ended = "UPDATE auctions SET current_status = 'ended'
+    WHERE end_time < :current_time
+    AND current_status IN ('scheduled','running')";
+
+    $stmt_update_ended = $pdo -> prepare($sql_update_ended);
+    $stmt_update_ended -> execute([':current_time' => $current_time]);
+
+    //update running auctions
+    $sql_update_running = "UPDATE auctions SET current_status = 'running'
+    WHERE start_time <= :check_time_start
+    AND end_time > :check_time_end
+    AND current_status = 'scheduled'";
+
+    $stmt_update_running = $pdo->prepare($sql_update_running);
+    $stmt_update_running->execute([':check_time_start' => $current_time,
+    ':check_time_end'=>$current_time]);
+
+    // get list of auctions
     $sql_get_auction_list = "SELECT 
     a.auction_id,i.item_id,i.title, u.display_name, a.starting_price, a.reserve_price, a.start_time,a.end_time,a.current_status
     FROM auctions a
