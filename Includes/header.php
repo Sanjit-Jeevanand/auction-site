@@ -39,7 +39,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
           <a class="nav-link" href="/auction-site/Pages/list_of_items.php">Your items</a>
         </li>
         <?php endif; ?>
-        <?php if ($is_logged_in && ($current_role === 'seller' || $current_role === 'both')): ?>
+        <?php if ($is_logged_in && ($current_role === 'seller' || $current_role === 'buyer')): ?>
         <li class="nav-item">
           <a class="nav-link" href="/auction-site/Pages/list_of_auctions.php">List of auction</a>
         </li>
