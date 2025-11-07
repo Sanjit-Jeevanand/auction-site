@@ -64,7 +64,7 @@ if (isset($_POST['submit_auction'])) {
             $start_date = new DateTime($start_time);
             $end_date = new DateTime($end_time);
 
-            if($start_date < $current_date){
+            if($start_date <= $current_date){
                 $time_errors[] = "Start time cannot be in the past";
             }
 
@@ -122,7 +122,7 @@ if (isset($_POST['submit_auction'])) {
                 $new_auction_id = $pdo->lastInsertId();
 
                 $redirect_url = "list_of_auctions.php?status=success&auction_id=" . $new_auction_id;
-                header("Location: /auction-site/Pages/list_of_auctions.php");
+                header("Location: /auction-site/Pages/seller_auctions.php");
                 exit; 
                 
             } catch (PDOException $e) {
