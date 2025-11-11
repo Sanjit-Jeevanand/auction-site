@@ -86,7 +86,7 @@ require_once __DIR__ . '/../includes/header.php';
             }
         } 
         if ($upload_success && $current_item_id)    {
-            header("Location: /auction-site/Pages/list_of_items.php");
+            header("Location: /auction-site/Pages/seller_items.php");
             exit;
 
         }  else {

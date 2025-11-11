@@ -6,7 +6,6 @@ require_once __DIR__ . '/../includes/header.php';
 
 <?php
 
-// session_start();
 $seller_id = current_user_id();
 $item_id = $_SESSION['item_id_to_auction'];
 $item_name = $_SESSION['item_name_to_auction'];
@@ -46,7 +45,7 @@ if (isset($_POST['submit_auction'])) {
         }
     }
 
-    $current_date = new DateTime();
+    $current_date = date('Y-m-d');
 
     // handle start time and end time validation
     $starttime = trim($_POST['starttime'] ?? '');
@@ -122,14 +121,14 @@ if (isset($_POST['submit_auction'])) {
                 $new_auction_id = $pdo->lastInsertId();
 
                 $redirect_url = "list_of_auctions.php?status=success&auction_id=" . $new_auction_id;
-                header("Location: /auction-site/Pages/list_of_auctions.php");
+                header("Location: /auction-site/Pages/seller_auctions.php");
                 exit; 
                 
             } catch (PDOException $e) {
                 $general_db_error = "Database Error: Auction creation failed. Please check your SQL log.";
                 $all_errors[] = $general_db_error;
             }
-    } 
+        } 
 }
 
 if (!$item_id || !$seller_id) {

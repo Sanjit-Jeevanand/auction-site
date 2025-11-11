@@ -24,7 +24,7 @@ if (!$current_seller_id) {
 
     $sql_get_items = "SELECT i.item_id,i.title,i.description,i.`condition`, i.created_at,ii.url as image_url,c.name as category_name
     FROM items i
-    INNER JOIN item_images ii ON i.item_id = ii.item_id AND display_order = 1
+    LEFT JOIN item_images ii ON i.item_id = ii.item_id AND display_order = 1
     LEFT JOIN categories c ON i.category_id = c.category_id
     WHERE i.seller_id = :seller_id
     ";
@@ -60,9 +60,9 @@ if (!$current_seller_id) {
                     <p class="date">Posted: <?php echo date('M j, Y', strtotime($item['created_at'])); ?></p>
 
                     <div class="item-actions">
-                            <form action="set_auction_session.php" method="POST" style="display:inline;">
-                                <input type="hidden" name="item_id_to_auction" value="<?php echo $item['item_id']; ?>">
-                                <input type="hidden" name="item_name_to_auction" value="<?php echo $item['image_url']; ?>">
+                        <form action="set_auction_session.php" method="POST" style="display:inline;">
+                            <input type="hidden" name="item_id_to_auction" value="<?php echo $item['item_id']; ?>">
+                            <input type="hidden" name="item_name_to_auction" value="<?php echo $item['image_url']; ?>">
                             <button type="submit" class="btn btn-success">
                                 Auction Item
                             </button>
@@ -74,7 +74,6 @@ if (!$current_seller_id) {
         <?php endforeach; ?>
     <?php else: ?>
         <p>No items are currently listed for sale.</p>
-        <p><a href="create_item.php">List your first item now!</a></p>
     <?php endif; ?>
 </div>
 </html>
