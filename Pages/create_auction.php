@@ -6,7 +6,6 @@ require_once __DIR__ . '/../includes/header.php';
 
 <?php
 
-// session_start();
 $seller_id = current_user_id();
 $item_id = $_SESSION['item_id_to_auction'];
 $item_name = $_SESSION['item_name_to_auction'];
@@ -46,7 +45,7 @@ if (isset($_POST['submit_auction'])) {
         }
     }
 
-    $current_date = new DateTime();
+    $current_date = date('Y-m-d');
 
     // handle start time and end time validation
     $starttime = trim($_POST['starttime'] ?? '');
@@ -64,7 +63,7 @@ if (isset($_POST['submit_auction'])) {
             $start_date = new DateTime($start_time);
             $end_date = new DateTime($end_time);
 
-            if($start_date <= $current_date){
+            if($start_date < $current_date){
                 $time_errors[] = "Start time cannot be in the past";
             }
 
@@ -129,7 +128,7 @@ if (isset($_POST['submit_auction'])) {
                 $general_db_error = "Database Error: Auction creation failed. Please check your SQL log.";
                 $all_errors[] = $general_db_error;
             }
-    } 
+        } 
 }
 
 if (!$item_id || !$seller_id) {
