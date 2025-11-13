@@ -10,6 +10,86 @@ if (!$current_seller_id) {
     exit;
 }
 ?>
+<style>
+.item-list-container {
+  margin: 40px auto;
+  max-width: 1200px;
+  padding: 20px;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.item-list-container h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.item-list-container .btn-success {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 10px 16px;
+  background-color: #198754;
+  color: white;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.items-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 25px;
+}
+
+.item-card {
+  width: 300px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.item-image img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.item-details {
+  padding: 15px;
+}
+
+.item-details p {
+  margin: 6px 0;
+  color: #444;
+}
+
+.item-actions {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.item-actions .btn-success {
+  background: #198754;
+  border: none;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.item-actions .btn-success:hover {
+  background: #157347;
+}
+</style>
+
 
 <html>
 <div class="item-list-container">
@@ -36,7 +116,9 @@ if (!$current_seller_id) {
     
     
     <?php if (count($items) > 0): ?>
+      <div class="items-grid">
         <?php foreach ($items as $item): ?>
+
             <div class="item-card">
                 
                 <div class="item-image">
@@ -72,6 +154,7 @@ if (!$current_seller_id) {
             </div>
             <hr>
         <?php endforeach; ?>
+      </div> <!-- end of items-grid -->  
     <?php else: ?>
         <p>No items are currently listed for sale.</p>
     <?php endif; ?>

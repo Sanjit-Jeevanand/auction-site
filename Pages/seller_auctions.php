@@ -1,9 +1,53 @@
 <html>
 
 <?php 
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/helpers.php';
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../Includes/db.php';
+require_once __DIR__ . '/../Includes/helpers.php';
+require_once __DIR__ . '/../Includes/header.php';
+
+// ✅ Mark notification as read when coming from notifications page
+if (isset($_GET['mark_read'])) {
+    require_once __DIR__ . '/../Includes/notify.php';
+    mark_notification_read((int)$_GET['mark_read']);
+}
+
+
+
+// ✅ Added feedback banner block (Step 2)
+if (isset($_GET['watch'])) {
+    $msg = '';
+    $class = 'info';
+
+    switch ($_GET['watch']) {
+        case 'success':
+            $msg = '✅ Added to your watchlist!';
+            $class = 'success';
+            break;
+        case 'exists':
+            $msg = 'ℹ️ This auction is already in your watchlist.';
+            $class = 'warning';
+            break;
+        case 'login':
+            $msg = 'Please log in to add items to your watchlist.';
+            $class = 'warning';
+            break;
+        case 'invalid':
+            $msg = 'Invalid request.';
+            $class = 'danger';
+            break;
+        case 'missing':
+            $msg = 'That auction no longer exists.';
+            $class = 'danger';
+            break;
+    }
+
+    if ($msg) {
+        echo '<div class="alert alert-' . htmlspecialchars($class) . '" style="margin:10px 0;">'
+           . htmlspecialchars($msg)
+           . '</div>';
+    }
+}
+// ✅ End of feedback banner block
 ?>
 
 <?php
@@ -81,6 +125,13 @@ require_once __DIR__ . '/../includes/header.php';
                         </strong>
                     </td>
                     <td><?php echo htmlspecialchars($auction['current_status']); ?></td>
+
+                    <td>
+                      <a href="../Includes/add_to_watchlist.php?auction_id=<?= (int)$auction['auction_id']; ?>"
+                          class="btn btn-outline-primary mt-2">
+                          ❤️ Add to Watchlist
+                      </a>
+                    </td>
 
                 </tr>
                 <?php endforeach; ?>

@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/notify.php';
+
 ?>
 
 
@@ -53,6 +55,44 @@ require_once __DIR__ . '/../includes/header.php';
                 $stmt_insert_bid -> execute($bid_params);
 
                 $redirect_url = "bid_history.php?status=success&auction_id=" . $current_auction_id;
+                // 📨 Add notifications after bid placement
+try {
+    // Get seller ID for this auction
+    $stmt_seller = $pdo->prepare("SELECT seller_id FROM auctions WHERE auction_id = ?");
+    $stmt_seller->execute([$current_auction_id]);
+    $seller_id = $stmt_seller->fetchColumn();
+
+    // Notify seller that a bid was placed
+    if ($seller_id && $seller_id != $current_bidder_id) {
+        add_notification(
+            $seller_id,
+            $current_auction_id,
+            'bid',
+            'A new bid has been placed on your auction.'
+        );
+    }
+
+    // Notify the previous top bidder they’ve been outbid
+    $stmt_prev = $pdo->prepare("
+        SELECT bidder_id FROM bids
+        WHERE auction_id = ?
+        ORDER BY amount DESC, bid_time ASC LIMIT 1 OFFSET 1
+    ");
+    $stmt_prev->execute([$current_auction_id]);
+    $prev_bidder = $stmt_prev->fetchColumn();
+
+    if ($prev_bidder && $prev_bidder != $current_bidder_id) {
+        add_notification(
+            $prev_bidder,
+            $current_auction_id,
+            'bid',
+            'You have been outbid by another user.'
+        );
+    }
+} catch (Exception $e) {
+    error_log('Notification error: ' . $e->getMessage());
+}
+
                 header("Location: /auction-site/Pages/bid_history.php");
                 exit; 
                         
