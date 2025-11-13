@@ -7,11 +7,24 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 
-// ✅ Optional debug helpers
+// User status
 $is_logged_in = !empty($_SESSION['user_id']);
 $current_role = $_SESSION['role'] ?? null;
 $current_page = basename($_SERVER['PHP_SELF']);
+
+// ✅ Get unread notification count *inside PHP*
+$unread_count = 0;
+if ($is_logged_in) {
+    try {
+        $stmt_n = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+        $stmt_n->execute([$_SESSION['user_id']]);
+        $unread_count = $stmt_n->fetchColumn();
+    } catch (Exception $e) {
+        $unread_count = 0; // fail-safe
+    }
+}
 ?>
+
 
 <!doctype html>
 <html lang="en">
@@ -23,7 +36,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <body>
 <?php if (isset($_SESSION['user_id'])): ?>
     <small style="color:red; font-weight:bold;">
-        (Debug: user_id = <?= htmlspecialchars($_SESSION['user_id']) ?>)
+        
     </small>
 <?php endif; ?>
 
@@ -60,18 +73,51 @@ $current_page = basename($_SERVER['PHP_SELF']);
           <a class="nav-link" href="/auction-site/Pages/seller_auctions.php">Seller auction</a>
         </li>
         <?php endif; ?>
-        <?php if ($is_logged_in && ($current_role === 'buyer')): ?>
-        <li class="nav-item">
-          <a class="nav-link" href="/auction-site/Pages/buyer_auctions.php">Buyer auction</a>
+        <?php if ($is_logged_in && $current_role === 'buyer'): ?>
+    <!-- Buyer auction link -->
+    <li class="nav-item">
+        <a class="nav-link <?= $current_page === 'buyer_auctions.php' ? 'active' : '' ?>"
+           href="/auction-site/Pages/buyer_auctions.php">
+            Buyer auction
+        </a>
+    </li>
 
-          <a class="nav-link <?= $current_page === 'create_auction.php' ? 'active' : '' ?>" href="/auction-site/Pages/create_auction.php">Create Auction</a>
-        </li>
-        <?php endif; ?>
+    <!-- Create Auction link -->
+    <li class="nav-item">
+        <a class="nav-link <?= $current_page === 'create_auction.php' ? 'active' : '' ?>"
+           href="/auction-site/Pages/create_auction.php">
+            Create Auction
+        </a>
+    </li>
+<?php endif; ?>
 
-        <li class="nav-item">
-          <a class="nav-link <?= $current_page === 'list_of_auctions.php' ? 'active' : '' ?>" href="/auction-site/Pages/list_of_auctions.php">List of auction</a>
 
-        </li>
+        <?php if ($is_logged_in): ?>
+    <?php
+        $auction_list_page = ($current_role === 'seller' || $current_role === 'both')
+            ? 'seller_auctions.php'
+            : 'buyer_auctions.php';
+    ?>
+    <li class="nav-item">
+      <a class="nav-link <?= $current_page === $auction_list_page ? 'active' : '' ?>"
+         href="/auction-site/Pages/<?= $auction_list_page ?>">
+         List of auction
+      </a>
+    </li>
+<?php endif; ?>
+
+        <?php if ($is_logged_in): ?>
+<li class="nav-item">
+  <a class="nav-link <?= $current_page === 'notifications.php' ? 'active' : '' ?>"
+     href="/auction-site/Pages/notifications.php">
+      🔔 Notifications
+      <?php if ($unread_count > 0): ?>
+          <span class="badge bg-danger ms-1"><?= $unread_count ?></span>
+      <?php endif; ?>
+  </a>
+</li>
+<?php endif; ?>
+
       </ul>
 
       <?php if ($is_logged_in): ?>
