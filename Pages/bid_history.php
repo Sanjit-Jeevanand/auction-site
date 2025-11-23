@@ -27,7 +27,7 @@ require_once __DIR__ . '/../includes/header.php';
             $auction_end_time = new DateTime($auction_status['end_time']);
             $current_time = new DateTime();
             if($current_time > $auction_end_time){
-                $is_auction = false;
+                $is_auction_live = false;
             }
         }
 

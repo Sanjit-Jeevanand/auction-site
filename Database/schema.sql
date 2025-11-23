@@ -161,7 +161,7 @@ CREATE TABLE auctions (
     FOREIGN KEY (seller_id) REFERENCES users(user_id)
     ON DELETE RESTRICT ON UPDATE CASCADE,
 
-  CHECK (current_status IN ('scheduled','running','ended','cancelled')),
+  CHECK (current_status IN ('scheduled','running','ended')),
   CHECK (end_time > start_time),
   CHECK (reserve_price IS NULL OR reserve_price >= starting_price),
 
