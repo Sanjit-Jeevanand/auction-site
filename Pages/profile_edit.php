@@ -22,6 +22,7 @@ $countries = [
 $currencies = [
   'GBP'=>'British Pound (GBP)','USD'=>'US Dollar (USD)','EUR'=>'Euro (EUR)','INR'=>'Indian Rupee (INR)','JPY'=>'Japanese Yen (JPY)','AUD'=>'Australian Dollar (AUD)','CAD'=>'Canadian Dollar (CAD)','CNY'=>'Chinese Yuan (CNY)','AED'=>'UAE Dirham (AED)','CHF'=>'Swiss Franc (CHF)','ZAR'=>'South African Rand (ZAR)','OTHER'=>'Other'
 ];
+$roles = ['buyer','seller','both'];
 
 // fetch current record
 $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = :id LIMIT 1");
@@ -89,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['form_type'] ?? '') !== 'c
         $country = trim($_POST['country'] ?? '');
         $language = trim($_POST['language'] ?? 'en');
         $currency = strtoupper(trim($_POST['currency'] ?? 'GBP'));
+        $role = trim($_POST['role'] ?? $user['role']);
         $subscribe_updates = isset($_POST['subscribe_updates']) ? 1 : 0;
 
         // validation
@@ -98,13 +100,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['form_type'] ?? '') !== 'c
         if (!array_key_exists($language, $languages)) $errors[] = 'Language invalid.';
         if (!array_key_exists($country, $countries)) $errors[] = 'Country invalid.';
         if (!array_key_exists($currency, $currencies)) $errors[] = 'Currency invalid.';
+        if (!in_array($role, $roles)) $errors[] = 'Role invalid.';
 
         if ($display_name === '') {
             $display_name = trim($first_name . ' ' . $last_name) ?: $user['email'];
         }
 
         if (empty($errors)) {
-            $sql = "UPDATE users SET title = :title, first_name = :first_name, last_name = :last_name, display_name = :display_name, alt_email = :alt_email, date_of_birth = :dob, phone = :phone, country = :country, language = :language, currency = :currency, subscribe_updates = :subscribe WHERE user_id = :id";
+            $sql = "UPDATE users SET title = :title, first_name = :first_name, last_name = :last_name, display_name = :display_name, alt_email = :alt_email, date_of_birth = :dob, phone = :phone, country = :country, language = :language, currency = :currency, role = :role, subscribe_updates = :subscribe WHERE user_id = :id";
             $stmt = $pdo->prepare($sql);
             try {
                 $stmt->execute([
@@ -118,9 +121,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['form_type'] ?? '') !== 'c
                     'country'=>$country ?: null,
                     'language'=>$language,
                     'currency'=>$currency,
+                    'role'=>$role,
                     'subscribe'=>$subscribe_updates,
                     'id'=>$user_id
                 ]);
+                $_SESSION['role'] = $role;
                 // refresh $user variable so the form shows updated values without re-login
                 $stmt2 = $pdo->prepare("SELECT * FROM users WHERE user_id = :id LIMIT 1");
                 $stmt2->execute(['id' => $user_id]);
@@ -216,6 +221,15 @@ $csrf = csrf_token();
         <select name="currency" class="form-select">
           <?php foreach ($currencies as $code => $name): ?>
             <option value="<?= h($code) ?>" <?= (($user['currency'] ?? '') === $code) ? 'selected' : '' ?>><?= h($name) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Role</label>
+        <select name="role" class="form-select">
+          <?php foreach ($roles as $r): ?>
+            <option value="<?= h($r) ?>" <?= (($user['role'] ?? '') === $r) ? 'selected' : '' ?>><?= h(ucfirst($r)) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
