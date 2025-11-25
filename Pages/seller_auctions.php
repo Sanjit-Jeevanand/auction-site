@@ -11,8 +11,6 @@ if (isset($_GET['mark_read'])) {
     mark_notification_read((int)$_GET['mark_read']);
 }
 
-
-
 // ✅ Added feedback banner block (Step 2)
 if (isset($_GET['watch'])) {
     $msg = '';
@@ -55,6 +53,26 @@ if (isset($_GET['watch'])) {
     date_default_timezone_set('Europe/London');
     $current_time = date('Y-m-d H:i:s');
 
+    // filter auctions by current_status, default showing all auctions ended and running
+
+    $category_filter = trim($_GET['auction_filter'] ?? 'every_auction');
+    $where_clause = '';
+
+    switch($category_filter) {
+        case 'running':
+            $where_clause = "a.current_status = 'running'";
+            break;
+        case 'ended':
+            $where_clause = "a.current_status = 'ended'";
+            break;
+        case 'scheduled':
+            $where_clause = "a.current_status = 'scheduled'";
+            break;
+        case 'every_auction':
+            $where_clause = "a.current_status IN ('running','ended','scheduled')";
+            break;
+    }
+
     // update ended auctions
     $sql_update_ended = "UPDATE auctions SET current_status = 'ended'
     WHERE end_time < :current_time
@@ -75,11 +93,13 @@ if (isset($_GET['watch'])) {
 
     // get list of auctions (seller)
     $sql_seller_view = "SELECT 
-    a.auction_id,i.item_id,i.title, u.display_name, a.starting_price, a.start_time,a.end_time,a.current_status
+    a.auction_id,i.item_id,i.title, u.display_name, a.starting_price, a.reserve_price, a.start_time,a.end_time,a.current_status
     FROM auctions a
     LEFT JOIN items i on a.item_id = i.item_id
     INNER JOIN users u on i.seller_id = u.user_id
-    WHERE i.seller_id = :seller_id ";
+    WHERE i.seller_id = :seller_id
+    " . (empty($where_clause) ? "" : "AND ") . $where_clause . "
+    ORDER BY a.end_time DESC";
 
     $stmt_seller_view = $pdo -> prepare($sql_seller_view);
     $stmt_seller_view -> execute(['seller_id' => $current_seller_id]);
@@ -87,19 +107,42 @@ if (isset($_GET['watch'])) {
 
 ?>
 
+<head>
+<style>
+    .auction-list-container{
+        max-width: 1000px;
+        margin-left: 100px;
+    }
+</style>
+
+</head>
+
 
 <div class="auction-list-container">
     <h2>My Auctions</h2>
+
+    <form action="seller_auctions.php" method="get">
+
+        <label for="auction_filter">Filter Auctions by status:</label>
+        <br>
+            <select name="auction_filter" id = "auction_filter" onchange="this.form.submit()">
+                <option value="every_auction">Scheduled&Running&Ended</option>
+                <option value ="scheduled" <?php if ($category_filter == 'scheduled') echo 'selected'; ?>>Scheduled </option>
+                <option value ="running" <?php if ($category_filter == 'running') echo 'selected'; ?>>Running</option>
+                <option value="ended"<?php if ($category_filter == 'ended') echo 'selected'; ?>>Ended</option>
+            </select>
+        <br><br>
+    </form>
     
     <?php if (count($auctions) > 0): ?>
         <table class="table table-striped auction-table">
             <thead>
                 <tr>
                     <th>Auction ID</th>
-                    <th>Item ID</th>
                     <th>Item Title</th>
                     <th>Seller</th>
                     <th>Starting Price</th>
+                    <th>Reserve Price</th>
                     <th>Start Time</th>
                     <th>End Time</th>
                     <th>Status</th>
@@ -109,14 +152,10 @@ if (isset($_GET['watch'])) {
                 <?php foreach ($auctions as $auction): ?>
                 <tr>
                     <td><?php echo htmlspecialchars($auction['auction_id']); ?></td>
-                    <td>
-                            <?php echo htmlspecialchars($auction['item_id']); ?>
-                        </a>
-                    </td>
                     <td><?php echo htmlspecialchars($auction['title']); ?></td>
                     <td><?php echo htmlspecialchars($auction['display_name']); ?></td>
-                    <td>$<?php echo number_format($auction['starting_price'], 2); ?></td>
-
+                    <td><?php echo number_format($auction['starting_price'], 2); ?></td>
+                    <td><?php echo number_format($auction['reserve_price'], 2); ?></td>
                     <td><?php echo date('Y-m-d H:i', strtotime($auction['start_time'])); ?></td>
                     <td>
                         <strong 
@@ -127,10 +166,10 @@ if (isset($_GET['watch'])) {
                     <td><?php echo htmlspecialchars($auction['current_status']); ?></td>
 
                     <td>
-                      <a href="../Includes/add_to_watchlist.php?auction_id=<?= (int)$auction['auction_id']; ?>"
-                          class="btn btn-outline-primary mt-2">
-                          ❤️ Add to Watchlist
-                      </a>
+                        <form action="set_seller_history_session.php" method="POST" style="display:inline-block;">
+                            <input type="hidden" name="auction_id_to_bid" value="<?php echo $auction['auction_id']; ?>">
+                            <button type="submit" class="btn btn-outline-dark">Bid history</button>
+                        </form> 
                     </td>
 
                 </tr>

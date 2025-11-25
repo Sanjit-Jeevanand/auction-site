@@ -144,7 +144,7 @@ if (!$current_seller_id) {
                     <div class="item-actions">
                         <form action="set_auction_session.php" method="POST" style="display:inline;">
                             <input type="hidden" name="item_id_to_auction" value="<?php echo $item['item_id']; ?>">
-                            <input type="hidden" name="item_name_to_auction" value="<?php echo $item['image_url']; ?>">
+                            <input type="hidden" name="item_name_to_auction" value="<?php echo $item['title']; ?>">
                             <button type="submit" class="btn btn-success">
                                 Auction Item
                             </button>

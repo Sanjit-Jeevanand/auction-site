@@ -81,7 +81,7 @@ if (isset($_POST['submit_auction'])) {
     }
 
         // handle auction status
-    $auction_status = trim($_POST['auction_status'] ?? '');
+    $auction_status = trim($_POST['auction_status'] ?? 'scheduled');
 
     if (empty($auction_status)){
         $status_errors[] = "Auction status is required. Please select 'Scheduled' or 'Cancelled'";
@@ -120,7 +120,7 @@ if (isset($_POST['submit_auction'])) {
                 $stmt_insert_auction->execute($auction_params);
                 $new_auction_id = $pdo->lastInsertId();
 
-                $redirect_url = "list_of_auctions.php?status=success&auction_id=" . $new_auction_id;
+                $redirect_url = "seller_auctions.php?status=success&auction_id=" . $new_auction_id;
                 header("Location: /auction-site/Pages/seller_auctions.php");
                 exit; 
                 
@@ -133,7 +133,7 @@ if (isset($_POST['submit_auction'])) {
 
 if (!$item_id || !$seller_id) {
     if (!isset($_POST['submit_auction'])) { 
-        header("Location: list_of_items.php"); 
+        header("Location: seller_auctions.php"); 
         exit;
     }
 }
@@ -146,11 +146,13 @@ if (!$item_id || !$seller_id) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width-device-width,initial-scale=1.0">
         <title>Auction your item></title>
-        <!--link to our stylesheet-->
-        <!-- <link rel="stylesheet" href="css/main.css"> -->
-         <style>
+        <style>
             .error { color: red; font-weight: bold; }
             .success { color: green; font-weight: bold; }
+            .wrapper-main{
+                max-width: 500px;
+                margin-left:100px;
+            }
         </style>
 </head>
 
@@ -158,7 +160,7 @@ if (!$item_id || !$seller_id) {
 
 <body>
 
-    <section class"wrapper-main">
+    <section class="wrapper-main">
 
         <?php if (!empty($all_errors)): ?>
             <?php foreach ($all_errors as $error): ?>
@@ -169,9 +171,8 @@ if (!$item_id || !$seller_id) {
 
         <form action="create_auction.php" method="post">
 
-            <p class="item_id">Auction item id <?php echo $item_id; ?></p>
             <p class="item_name">Auction item name <?php echo $item_name; ?></p>
-            <p class="seller_id">Seller for auctioned item <?php echo $seller_id; ?></p>
+            <!-- <p class="seller_id">Seller for auctioned item <?php echo $seller_id; ?></p> -->
   
             <label for="startingprice">Starting price</label>
             <br>
@@ -198,8 +199,8 @@ if (!$item_id || !$seller_id) {
             <input type="radio",id="scheduled"name="auction_status"value="scheduled">
             <label for="message">Scheduled</label>
 
-            <input type="radio",id="cancelled"name="auction_status"value="cancelled">
-            <label for="message">Cancelled</label>
+            <input type="radio",id="cancelled"name="auction_status"value="running">
+            <label for="message">Running</label>
             <br></br>
 
             <button type="submit" name="submit_auction" class="btn btn-primary">

@@ -2,8 +2,8 @@
 
 <?php 
 require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/active_proxy.php';
 ?>
 
 
@@ -11,7 +11,37 @@ require_once __DIR__ . '/../includes/header.php';
 
     $bidder_id = current_user_id(); 
     $auction_id = $_SESSION['auction_id_to_bid'];
+    $current_role = $_SESSION['role'] ?? null;
+    $is_bidder = (isset($current_role) && ($current_role === 'buyer' || $current_role === 'both'));
     $is_auction_live = true;
+
+    // get minimum bid which is the starting price
+
+    $auction_item_name = 'N/A';
+    $starting_price = 0.0;
+
+    // get auction item name
+    try{
+        $sql_get_item = "SELECT a.starting_price, i.title
+        FROM auctions a
+        JOIN items i ON a.item_id=i.item_id
+        WHERE a.auction_id = ?";
+
+        $stmt_get_item = $pdo->prepare($sql_get_item);
+        $stmt_get_item->execute([$auction_id]);
+
+        $result = $stmt_get_item->fetch(PDO::FETCH_ASSOC);
+
+        if($result !==false){
+            $reserve_price = (float)$result['starting_price'];
+            $starting_price = $reserve_price;
+            $auction_item_name = htmlspecialchars($result['title']);
+        }
+     } catch (PDOEXCEPTION $e){
+        error_log("Failed to fetch auction details for auction $current_auction_id: "
+        .$e->getMessage(),0);
+    }
+
 
     // condition to check auction end date
     try{
@@ -80,19 +110,24 @@ require_once __DIR__ . '/../includes/header.php';
 
 <body>
     <div class="container">
-        <h2> Bid history for: <?php echo $auction_id ?> </h2>
-
+        <h2> Bid history for item: <?php echo $auction_item_name; ?> </h2>
             <?php if ($is_auction_live): ?>
+                <?php if ($current_role === 'buyer' || $current_role === 'both'): ?>
                 <form action="create_bid.php" method="POST" style="display:inline;">
                     <input type="hidden" name="auction_id_to_bid" value="<?php echo $auction['auction_id']; ?>">
                     <td><button type="submit_bid" class="btn btn-success">
                         Place bid
                     </button></td>
                 </form>
-            <?php else: ?>
-                <p style="font-weight: bold; color: darkred;">
-                Bidding is closed for this auction.
-                </p>
+                <?php elseif ($current_role === 'seller'): ?>
+                    <p style="font-weight: bold;color:blue;">
+                        You cannot place a bid on this item 
+                    </p>
+                <?php endif; ?>
+                <?php else: ?>
+                    <p style="font-weight: bold; color: darkred;">
+                    Bidding is closed for this auction.
+                    </p>
             <?php endif; ?>
             
         <?php if (empty($bids)):?>

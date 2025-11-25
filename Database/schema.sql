@@ -184,6 +184,8 @@ CREATE TABLE bids (
   amount     DECIMAL(12,2) NOT NULL,
   bid_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   is_proxy   BOOLEAN NOT NULL DEFAULT FALSE,
+  proxy_limit DECIMAL(12,2) NULL,
+  increment DECIMAL(12,2) NULL
 
   CONSTRAINT fk_bid_auc
     FOREIGN KEY (auction_id)
@@ -200,6 +202,8 @@ CREATE TABLE bids (
   INDEX idx_bid_bidder   (bidder_id),
 
   CHECK (amount > 0)
+  CHECK(proxy_limit IS NULL OR proxy_limit > 0)
+  CHECK(increment IS NULL OR increment >0)
 ) ENGINE=InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================
