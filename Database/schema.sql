@@ -31,6 +31,19 @@ CREATE TABLE users (
   language VARCHAR(50) DEFAULT 'en',         -- preferred language
   currency CHAR(3) DEFAULT 'GBP',            -- preferred currency (ISO)
   profile_json JSON DEFAULT NULL,            -- flexible profile extension
+  
+    -- seller rating summary
+  seller_rating_avg DECIMAL(3,2) DEFAULT NULL,
+  seller_rating_count INT UNSIGNED NOT NULL DEFAULT 0,
+
+  -- buyer search history (lightweight)
+  last_search VARCHAR(500) DEFAULT NULL,
+  last_search_at DATETIME DEFAULT NULL,
+
+  -- combined-mode metrics
+  total_searches INT UNSIGNED NOT NULL DEFAULT 0,
+  total_ratings_given INT UNSIGNED NOT NULL DEFAULT 0,
+  total_items_sold INT UNSIGNED NOT NULL DEFAULT 0
 
   -- account metadata
   role ENUM('buyer','seller','both','admin') NOT NULL DEFAULT 'buyer',
@@ -184,8 +197,8 @@ CREATE TABLE bids (
   amount     DECIMAL(12,2) NOT NULL,
   bid_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   is_proxy   BOOLEAN NOT NULL DEFAULT FALSE,
-  proxy_limit DECIMAL(12,2) NULL,
-  increment DECIMAL(12,2) NULL
+  proxy_limit DECIMAL(12,2) DEFAULT NULL,
+  increment  DECIMAL(12,2) DEFAULT NULL,
 
   CONSTRAINT fk_bid_auc
     FOREIGN KEY (auction_id)
@@ -201,9 +214,9 @@ CREATE TABLE bids (
   INDEX idx_bid_auc_amt  (auction_id, amount DESC),
   INDEX idx_bid_bidder   (bidder_id),
 
-  CHECK (amount > 0)
-  CHECK(proxy_limit IS NULL OR proxy_limit > 0)
-  CHECK(increment IS NULL OR increment >0)
+  CHECK (amount > 0),
+  CHECK (proxy_limit IS NULL OR proxy_limit > 0),
+  CHECK (increment IS NULL OR increment > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================
