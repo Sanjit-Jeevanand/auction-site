@@ -19,6 +19,8 @@ require_once __DIR__ . '/../includes/recommend.php';
 
 </head>
 
+
+
 <?php
 
 
@@ -29,54 +31,118 @@ require_once __DIR__ . '/../includes/recommend.php';
     // filter auctions by current_status, default showing all auctions ended and running
 
     $category_filter = trim($_GET['auction_filter'] ?? 'every_auction');
-    $where_clause = '';
+    $search_q_raw = trim($_GET['q'] ?? '');
+    $search_q = $search_q_raw !== '' ? $search_q_raw : '';
 
-    switch($category_filter) {
+    switch ($category_filter) {
         case 'running':
             $where_clause = "WHERE a.current_status = 'running'";
             break;
         case 'ended':
             $where_clause = "WHERE a.current_status = 'ended'";
             break;
-        case 'every_auction':
+        default:
             $where_clause = "WHERE a.current_status IN ('running','ended')";
             break;
     }
 
     // update ended auctions
-
     $sql_update_ended = "UPDATE auctions SET current_status = 'ended'
     WHERE end_time < :current_time
     AND current_status IN ('scheduled','running')";
 
-    $stmt_update_ended = $pdo -> prepare($sql_update_ended);
-    $stmt_update_ended -> execute([':current_time' => $current_time]);
+    $stmt_update_ended = $pdo->prepare($sql_update_ended);
+    $stmt_update_ended->execute(['current_time' => $current_time]);
 
-    // get list of auctions (buyer view) and current highest bid
+    // get list of auctions (buyer view) and include description so we can fuzzy-filter in PHP
     $sql_buyer_auctions = "SELECT 
-    a.auction_id,i.item_id,i.title, u.display_name, a.starting_price, 
+    a.auction_id, i.item_id, i.title, i.description, u.user_id AS seller_id, u.display_name, a.starting_price, 
     (
         SELECT MAX(b.amount)
         FROM bids b
         WHERE b.auction_id = a.auction_id
-    ) AS current_high_bid, a.start_time,a.end_time,a.current_status
+    ) AS current_high_bid, a.start_time, a.end_time, a.current_status
     FROM auctions a
-    LEFT JOIN items i on a.item_id = i.item_id
-    INNER JOIN users u on i.seller_id = u.user_id
+    LEFT JOIN items i ON a.item_id = i.item_id
+    INNER JOIN users u ON i.seller_id = u.user_id
     $where_clause
     ORDER BY a.end_time DESC";
 
-
-    $stmt_buyer_auctions = $pdo -> prepare($sql_buyer_auctions);
-    $stmt_buyer_auctions -> execute();
+    $stmt_buyer_auctions = $pdo->prepare($sql_buyer_auctions);
+    $stmt_buyer_auctions->execute();
     $auctions = $stmt_buyer_auctions->fetchAll(PDO::FETCH_ASSOC);
+
+    // If a search query exists, perform a safe PHP-side fuzzy filter using character-overlap ratio.
+    if ($search_q !== '') {
+        // helper: compute character-overlap ratio between needle and haystack
+        $compute_overlap_ratio = function(string $needle, string $haystack) {
+            // normalize: lowercase, keep letters and digits
+            $needle = mb_strtolower($needle, 'UTF-8');
+            $haystack = mb_strtolower($haystack, 'UTF-8');
+            $needle = preg_replace('/[^a-z0-9]/u', '', $needle);
+            $haystack = preg_replace('/[^a-z0-9]/u', '', $haystack);
+            if ($needle === '') return 0.0;
+
+            // frequency counts for needle and haystack
+            $nlen = mb_strlen($needle, 'UTF-8');
+            $needle_counts = [];
+            for ($i = 0; $i < $nlen; $i++) {
+                $ch = mb_substr($needle, $i, 1, 'UTF-8');
+                if (!isset($needle_counts[$ch])) $needle_counts[$ch] = 0;
+                $needle_counts[$ch]++;
+            }
+            $hay_counts = [];
+            $hlen = mb_strlen($haystack, 'UTF-8');
+            for ($i = 0; $i < $hlen; $i++) {
+                $ch = mb_substr($haystack, $i, 1, 'UTF-8');
+                if (!isset($hay_counts[$ch])) $hay_counts[$ch] = 0;
+                $hay_counts[$ch]++;
+            }
+
+            $matches = 0;
+            foreach ($needle_counts as $ch => $cnt) {
+                if (isset($hay_counts[$ch])) {
+                    $matches += min($cnt, $hay_counts[$ch]);
+                }
+            }
+
+            return $matches / max(1, mb_strlen($needle, 'UTF-8'));
+        };
+
+        $filtered = [];
+        $threshold = 0.5; // require at least 50% of query characters to match
+        foreach ($auctions as $a) {
+            $hay = ($a['title'] ?? '') . ' ' . ($a['description'] ?? '');
+            $ratio = $compute_overlap_ratio($search_q, $hay);
+            if ($ratio >= $threshold) {
+                $filtered[] = $a;
+            }
+        }
+        // replace auctions with filtered results
+        $auctions = $filtered;
+    }
+
     // Build personalised recommendations for this user (E6 feature)
-$recommended_auctions = build_full_recommendation_list($bidder_id, 3);
+    $recommended_auctions = build_full_recommendation_list($bidder_id, 3);
 
 ?>
 
 <div class="auction-list-container">
     <h2>Active Auctions</h2>
+
+    <form action="buyer_auctions.php" method="get" class="mb-3">
+        <div class="input-group" style="max-width: 400px;">
+            <input 
+                type="text" 
+                name="q" 
+                class="form-control" 
+                placeholder="Search items..."
+            >
+            <button class="btn btn-primary" type="submit">
+                Search
+            </button>
+        </div>
+    </form>
 
     <form action="buyer_auctions.php" method="get">
 
@@ -116,7 +182,11 @@ $recommended_auctions = build_full_recommendation_list($bidder_id, 3);
 
                     <td><?php echo htmlspecialchars($auction['auction_id']); ?></td>
                     <td><?php echo htmlspecialchars($auction['title']); ?></td>
-                    <td><?php echo htmlspecialchars($auction['display_name']); ?></td>
+                    <td>
+                        <a href="seller_profile.php?seller_id=<?php echo urlencode($auction['seller_id']); ?>">
+                            <?php echo htmlspecialchars($auction['display_name']); ?>
+                        </a>
+                    </td>
                     <td>$<?php echo number_format($auction['starting_price'], 2); ?></td>
 
                     <td><?php 

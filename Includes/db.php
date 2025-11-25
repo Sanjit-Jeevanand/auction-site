@@ -2,10 +2,10 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-$host = 'localhost';       // You can try 'localhost' if needed
+$host = 'localhost';       
 $db   = 'auction_db';
 $user = 'auction_user';
-$pass = '12345678';         // Your password
+$pass = '12345678';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

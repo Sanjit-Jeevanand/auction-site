@@ -77,6 +77,15 @@ if ($is_logged_in) {
               <li class="nav-item">
                 <a class="nav-link" href="/auction-site/Pages/seller_auctions.php">Seller auction</a>
               </li>
+
+              <!-- NEW: Seller Profile (visible to seller and both roles) -->
+              <li class="nav-item">
+                <a class="nav-link <?= $current_page === 'seller_profile.php' ? 'active' : '' ?>"
+                   href="/auction-site/Pages/seller_profile.php?seller_id=<?= urlencode($_SESSION['user_id']) ?>">
+                  Seller Profile
+                </a>
+              </li>
+
               <?php endif; ?>
 
         <?php if ($is_logged_in): ?>
