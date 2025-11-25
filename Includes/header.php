@@ -62,49 +62,22 @@ if ($is_logged_in) {
           <a class="nav-link <?= $current_page === 'login.php' ? 'active' : '' ?>" href="/auction-site/Pages/login.php">Login</a>
         </li>
 
-        <?php if ($is_logged_in && ($current_role === 'seller' || $current_role === 'both')): ?>
-        <li class="nav-item">
 
-          <a class="nav-link" href="/auction-site/Pages/seller_items.php">Your items</a>
-        </li>
-        <?php endif; ?>
-        <?php if ($is_logged_in && ($current_role === 'seller')): ?>
-        <li class="nav-item">
-          <a class="nav-link" href="/auction-site/Pages/seller_auctions.php">Seller auction</a>
-        </li>
-        <?php endif; ?>
-        <?php if ($is_logged_in && $current_role === 'buyer'): ?>
-    <!-- Buyer auction link -->
-    <li class="nav-item">
-        <a class="nav-link <?= $current_page === 'buyer_auctions.php' ? 'active' : '' ?>"
-           href="/auction-site/Pages/buyer_auctions.php">
-            Buyer auction
-        </a>
-    </li>
+        <?php if ($is_logged_in) ?>
+              <li class="nav-item">
+                <a class="nav-link" href="/auction-site/Pages/buyer_auctions.php">
+                  All auctions
+                </a>
+              </li>
 
-    <!-- Create Auction link -->
-    <li class="nav-item">
-        <a class="nav-link <?= $current_page === 'create_auction.php' ? 'active' : '' ?>"
-           href="/auction-site/Pages/create_auction.php">
-            Create Auction
-        </a>
-    </li>
-<?php endif; ?>
-
-
-        <?php if ($is_logged_in): ?>
-    <?php
-        $auction_list_page = ($current_role === 'seller' || $current_role === 'both')
-            ? 'seller_auctions.php'
-            : 'buyer_auctions.php';
-    ?>
-    <li class="nav-item">
-      <a class="nav-link <?= $current_page === $auction_list_page ? 'active' : '' ?>"
-         href="/auction-site/Pages/<?= $auction_list_page ?>">
-         List of auction
-      </a>
-    </li>
-<?php endif; ?>
+              <?php if ($current_role === 'seller' || $current_role === 'both'): ?>
+              <li class="nav-item">
+                <a class="nav-link" href="/auction-site/Pages/seller_items.php">Your items</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/auction-site/Pages/seller_auctions.php">Seller auction</a>
+              </li>
+              <?php endif; ?>
 
         <?php if ($is_logged_in): ?>
 <li class="nav-item">

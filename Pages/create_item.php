@@ -90,7 +90,7 @@ require_once __DIR__ . '/../includes/header.php';
             exit;
 
         }  else {
-            echo "An error occured during item submissiono or uploading image";
+            echo "An error occured during item submission or uploading image";
         }
     }
 ?>
@@ -101,15 +101,19 @@ require_once __DIR__ . '/../includes/header.php';
 <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width-device-width,initial-scale=1.0">
+        <style>
+            .wrapper-main{
+                max-width: 500px;
+                margin-left: 100px;
+            }
+        </style>
         <title>Add items</title>
-        <!--link to our stylesheet-->
-        <!-- <link rel="stylesheet" href="css/main.css"> -->
 </head>
 
 
 <body>
 
-    <section class"wrapper-main">
+    <section class="wrapper-main">
         <form action="create_item.php" method="post" enctype="multipart/form-data">
 
             <label for="itemname">Item name</label>
