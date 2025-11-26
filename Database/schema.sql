@@ -32,7 +32,7 @@ CREATE TABLE users (
   currency CHAR(3) DEFAULT 'GBP',            -- preferred currency (ISO)
   profile_json JSON DEFAULT NULL,            -- flexible profile extension
   
-    -- seller rating summary
+  -- seller rating summary
   seller_rating_avg DECIMAL(3,2) DEFAULT NULL,
   seller_rating_count INT UNSIGNED NOT NULL DEFAULT 0,
 
@@ -43,7 +43,7 @@ CREATE TABLE users (
   -- combined-mode metrics
   total_searches INT UNSIGNED NOT NULL DEFAULT 0,
   total_ratings_given INT UNSIGNED NOT NULL DEFAULT 0,
-  total_items_sold INT UNSIGNED NOT NULL DEFAULT 0
+  total_items_sold INT UNSIGNED NOT NULL DEFAULT 0,
 
   -- account metadata
   role ENUM('buyer','seller','both','admin') NOT NULL DEFAULT 'buyer',
