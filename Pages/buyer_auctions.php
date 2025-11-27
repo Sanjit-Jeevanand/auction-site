@@ -23,14 +23,12 @@ require_once __DIR__ . '/../includes/recommend.php';
 
 <?php
 
-
     $bidder_id = current_user_id(); 
     date_default_timezone_set('Europe/London');
     $current_time = date('Y-m-d H:i:s');
 
-    // filter auctions by current_status, default showing all auctions ended and running
-
     $category_filter = trim($_GET['auction_filter'] ?? 'every_auction');
+    $filter_category = trim($_GET['filter_category'] ?? 'every_category');
     $search_q_raw = trim($_GET['q'] ?? '');
     $search_q = $search_q_raw !== '' ? $search_q_raw : '';
 
@@ -52,6 +50,7 @@ require_once __DIR__ . '/../includes/recommend.php';
         }
     }
 
+    // filter auctions by current_status, default showing all auctions ended and running
     switch ($category_filter) {
         case 'running':
             $where_clause = "WHERE a.current_status = 'running'";
@@ -62,6 +61,40 @@ require_once __DIR__ . '/../includes/recommend.php';
         default:
             $where_clause = "WHERE a.current_status IN ('running','ended')";
             break;
+    }
+
+    // filter auctions by categories
+    $where_category_clause = "";
+    if($filter_category !== 'every_category') {
+        try{
+            $stmt_cat = $pdo->prepare("SELECT category_id FROM categories WHERE name=?");
+            $stmt_cat->execute([$filter_category]);
+            $cat_id = $stmt_cat->fetchColumn();
+            if($cat_id){
+                $where_category_clause = " c.parent_category_id = ". (int)$cat_id;
+            }
+        } catch (Exception $e) {
+            error_log('Category lookup failed: '.$e->getMessage());
+        }
+    }
+
+    $all_conditions = [];
+
+    if (!empty($where_status_clause)) {
+        if (strpos($where_status_clause, 'WHERE ') === 0) {
+             $all_conditions[] = substr($where_status_clause, 6); 
+        } else {
+             $all_conditions[] = $where_status_clause;
+        }
+    }
+
+    if(!empty($where_category_clause)){
+        $all_conditions[] = $where_category_clause;
+    }
+
+    $final_where_sql = '';
+    if(!empty($all_conditions)){
+        $final_where_sql = 'WHERE '.implode(' AND ',$all_conditions);
     }
 
     // update ended auctions
@@ -83,7 +116,8 @@ require_once __DIR__ . '/../includes/recommend.php';
     FROM auctions a
     LEFT JOIN items i ON a.item_id = i.item_id
     INNER JOIN users u ON i.seller_id = u.user_id
-    $where_clause
+    INNER JOIN categories c ON i.category_id = c.category_id
+    $final_where_sql
     ORDER BY a.end_time DESC";
 
     $stmt_buyer_auctions = $pdo->prepare($sql_buyer_auctions);
@@ -173,7 +207,19 @@ require_once __DIR__ . '/../includes/recommend.php';
             </select>
         <br><br>
     </form>
-    
+
+    <form action="buyer_auctions.php" method="get">
+
+        <label for="filter_category">Filter Auctions by category:</label>
+        <br>
+            <select name="filter_category" id = "filter_category" onchange="this.form.submit()">
+                <option value="every_category">All categories</option>
+                <option value ="Electronics & Technology" <?php if ($filter_category == 'Electronics & Technology') echo 'selected'; ?>>Electronics</option>
+                <option value="Fashion & Apparel"<?php if ($filter_category == 'Fashion & Apparel') echo 'selected'; ?>>Fashion</option>
+            </select>
+        <br><br>
+    </form>
+
     <?php if (count($auctions) > 0): ?>
         <table class="table table-striped auction-table mx-auto d-block">
             <thead>
