@@ -139,7 +139,6 @@ require_once __DIR__ . '/../includes/active_proxy.php';
                         <th>Bidder </th>
                         <th>Amount </th>
                         <th>Time placed </th>
-                        <th>Type </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -160,13 +159,6 @@ require_once __DIR__ . '/../includes/active_proxy.php';
                         <td><?php echo $display_name; ?></td>
                         <td><?php echo $bid['amount']?></td>
                         <td><?php echo $bid['bid_time']?></td>
-                        <td> <?php 
-                            if (($bid['is_proxy'] ?? 0) == 1) {
-                                echo '<span style="color: blue;">PROXY</span>';
-                            } else {
-                                echo 'Standard';
-                            }
-                        ?></td>
                     </tr>
                         <?php endforeach;?>
                 </tbody>
