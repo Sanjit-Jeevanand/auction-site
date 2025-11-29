@@ -17,16 +17,25 @@ function process_proxy_bids(PDO $pdo, int $auction_id, int $new_bidder_id, float
         return;
     }
     
-    $existing_bidder_id = (int)$existing_top_bid['bidder_id'];
-    $existing_proxy_limit = (float)$existing_top_bid['proxy_limit'];
-    $existing_increment = (float)$existing_top_bid['increment'];
-    $current_highest_bid = $new_amount;
+    $existing_bidder_id   = (int)$existing_top_bid['bidder_id'];
+    // keep proxy_limit as NULL if there is no proxy set
+    $existing_proxy_limit = $existing_top_bid['proxy_limit'] !== null
+        ? (float)$existing_top_bid['proxy_limit']
+        : null;
+    $existing_increment   = (float)$existing_top_bid['increment'];
+    $current_highest_bid  = $new_amount;
 
-    if($existing_top_bid['proxy_limit']!= null){
-        $required_outbid_amount = $current_highest_bid+$existing_increment;
+    // 🚫 If the existing top bidder has no proxy limit set, there is
+    // nothing to auto-bid – just return and let the new bid stand.
+    if ($existing_proxy_limit === null) {
+        return;
     }
 
-    if($existing_proxy_limit >= $required_outbid_amount){
+    // amount needed for the proxy bidder to outbid the new bid
+    $required_outbid_amount = $current_highest_bid + $existing_increment;
+
+    if ($existing_proxy_limit >= $required_outbid_amount) {
+
         // the amount required for proxy to outbid
         $auto_bid_amount = $required_outbid_amount;
 

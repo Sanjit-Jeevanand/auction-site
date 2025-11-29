@@ -80,7 +80,8 @@ $watchlist = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <?php
 // 🧠 Collaborative Recommendation Section
-$recs = get_recommendations((int)$user_id, 5);
+$recs = build_full_recommendation_list($user_id, 5);
+
 
 ?>
 
