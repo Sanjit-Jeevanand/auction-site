@@ -5,8 +5,54 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/recommend.php';
+require_once __DIR__ . '/../includes/notify.php';   // 👈 NEW
 
+// 👇 Mark notification as read when coming from notifications page
+if (isset($_GET['mark_read']) && ctype_digit($_GET['mark_read'])) {
+    mark_notification_read((int)$_GET['mark_read']);
+}    
 ?>
+<?php
+// ✅ Feedback banner for watchlist actions
+if (isset($_GET['watch'])) {
+    $msg   = '';
+    $class = 'info';
+
+    switch ($_GET['watch']) {
+        case 'success':
+            $msg   = '✅ Added to your watchlist!';
+            $class = 'success';
+            break;
+        case 'exists':
+            $msg   = 'ℹ️ This auction is already in your watchlist.';
+            $class = 'warning';
+            break;
+        case 'removed':
+            $msg   = '❌ Removed from your watchlist.';
+            $class = 'secondary';
+            break;
+        case 'login':
+            $msg   = 'Please log in to manage your watchlist.';
+            $class = 'warning';
+            break;
+        case 'invalid':
+            $msg   = 'Invalid request.';
+            $class = 'danger';
+            break;
+        case 'missing':
+            $msg   = 'That auction no longer exists.';
+            $class = 'danger';
+            break;
+    }
+
+    if ($msg) {
+        echo '<div class="alert alert-' . htmlspecialchars($class) . '" style="margin:10px 0;">'
+           . htmlspecialchars($msg)
+           . '</div>';
+    }
+}
+?>
+
 
 <head>
 <style>
@@ -299,10 +345,13 @@ require_once __DIR__ . '/../includes/recommend.php';
             ❤️ Add to Watchlist
         </a>
     <?php else: ?>
-        <span style="margin-left:6px; color:green; font-weight:bold;">
-            ✓ In Watchlist
-        </span>
-    <?php endif; ?>
+    <a href="../Includes/remove_from_watchlist.php?auction_id=<?php echo $auction['auction_id']; ?>"
+       class="btn btn-outline-secondary"
+       style="margin-left:6px;">
+        Remove From Watchlist
+    </a>
+<?php endif; ?>
+
 </td>
 
 </tr>
