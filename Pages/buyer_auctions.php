@@ -96,52 +96,49 @@ if (isset($_GET['watch'])) {
         }
     }
 
-    // filter auctions by current_status, default showing all auctions ended and running
+    // -----------------------------
+    // Filter auctions by status
+    // -----------------------------
+    $conditions = [];
+
     switch ($category_filter) {
         case 'running':
-            $where_clause = "WHERE a.current_status = 'running'";
+            $conditions[] = "a.current_status = 'running'";
             break;
         case 'ended':
-            $where_clause = "WHERE a.current_status = 'ended'";
+            $conditions[] = "a.current_status = 'ended'";
             break;
         default:
-            $where_clause = "WHERE a.current_status IN ('running','ended')";
+            $conditions[] = "a.current_status IN ('running','ended')";
             break;
     }
 
-    // filter auctions by categories
-    $where_category_clause = "";
-    if($filter_category !== 'every_category') {
-        try{
-            $stmt_cat = $pdo->prepare("SELECT category_id FROM categories WHERE name=?");
+    // -----------------------------
+    // Filter auctions by category
+    // -----------------------------
+    if ($filter_category !== 'every_category') {
+        try {
+            $stmt_cat = $pdo->prepare("SELECT category_id FROM categories WHERE name = ?");
             $stmt_cat->execute([$filter_category]);
             $cat_id = $stmt_cat->fetchColumn();
-            if($cat_id){
-                $where_category_clause = " c.parent_category_id = ". (int)$cat_id;
+
+            if ($cat_id) {
+                // parent_category_id or category_id depending on your schema
+                $conditions[] = "c.parent_category_id = " . (int)$cat_id;
             }
         } catch (Exception $e) {
-            error_log('Category lookup failed: '.$e->getMessage());
+            error_log('Category lookup failed: ' . $e->getMessage());
         }
     }
 
-    $all_conditions = [];
-
-    if (!empty($where_status_clause)) {
-        if (strpos($where_status_clause, 'WHERE ') === 0) {
-             $all_conditions[] = substr($where_status_clause, 6); 
-        } else {
-             $all_conditions[] = $where_status_clause;
-        }
-    }
-
-    if(!empty($where_category_clause)){
-        $all_conditions[] = $where_category_clause;
-    }
-
+    // -----------------------------
+    // Build final WHERE clause
+    // -----------------------------
     $final_where_sql = '';
-    if(!empty($all_conditions)){
-        $final_where_sql = 'WHERE '.implode(' AND ',$all_conditions);
+    if (!empty($conditions)) {
+        $final_where_sql = 'WHERE ' . implode(' AND ', $conditions);
     }
+
 
     // update ended auctions
     $sql_update_ended = "UPDATE auctions SET current_status = 'ended'
@@ -221,7 +218,7 @@ if (isset($_GET['watch'])) {
     }
 
     // Build personalised recommendations for this user (E6 feature)
-    $recommended_auctions = build_full_recommendation_list($bidder_id, 3);
+    $recommended_auctions = get_recommendations($bidder_id, 3);
 
 ?>
 

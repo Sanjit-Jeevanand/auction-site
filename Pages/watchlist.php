@@ -80,13 +80,18 @@ $watchlist = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <?php
 // 🧠 Collaborative Recommendation Section
-$recs = build_full_recommendation_list($user_id, 5);
+if (!empty($watchlist)) {
+    $recommendations = get_recommendations($user_id);
+} else {
+    $recommendations = [];
+}
+
 
 
 ?>
 
 <!-- 🎯 Recommendations Section -->
-<?php if (!empty($recs)): ?>
+<?php if (!empty($recommendations)): ?>
 <div class="container mt-5">
     <h4 class="mb-3" style="font-weight: 600;">Recommended for You</h4>
     <table class="table table-bordered table-hover align-middle">
@@ -99,7 +104,7 @@ $recs = build_full_recommendation_list($user_id, 5);
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($recs as $r): ?>
+            <?php foreach ($recommendations as $r): ?>
             <tr>
                 <td><?= htmlspecialchars($r['title']); ?></td>
                 <td><?= htmlspecialchars($r['seller']); ?></td>
