@@ -4,6 +4,7 @@
 require_once __DIR__ . '/../Includes/db.php';
 require_once __DIR__ . '/../Includes/helpers.php';
 require_once __DIR__ . '/../Includes/header.php';
+require_once __DIR__ . '/../Includes/notify.php';
 
 // ✅ Mark notification as read when coming from notifications page
 if (isset($_GET['mark_read'])) {
@@ -37,6 +38,11 @@ if (isset($_GET['watch'])) {
             $msg = 'That auction no longer exists.';
             $class = 'danger';
             break;
+            case 'removed':
+    $msg = '❌ Removed from your watchlist.';
+    $class = 'warning';
+    break;
+
     }
 
     if ($msg) {
@@ -150,6 +156,12 @@ if (isset($_GET['watch'])) {
             </thead>
             <tbody>
                 <?php foreach ($auctions as $auction): ?>
+                    <?php
+    // Check if this auction is already in the current user's watchlist
+    $stmt_w = $pdo->prepare("SELECT 1 FROM watchlist WHERE user_id = ? AND auction_id = ?");
+    $stmt_w->execute([$current_seller_id, $auction['auction_id']]);
+    $is_in_watchlist = $stmt_w->fetchColumn();
+?>
                 <tr>
                     <td><?php echo htmlspecialchars($auction['auction_id']); ?></td>
                     <td><?php echo htmlspecialchars($auction['title']); ?></td>
@@ -166,12 +178,23 @@ if (isset($_GET['watch'])) {
                     <td><?php echo htmlspecialchars($auction['current_status']); ?></td>
 
                     <td>
-                        <form action="set_seller_history_session.php" method="POST" style="display:inline-block;">
-                            <input type="hidden" name="auction_id_to_bid" value="<?php echo $auction['auction_id']; ?>">
-                            <button type="submit" class="btn btn-outline-dark">Bid history</button>
-                        </form> 
-                    </td>
+    <form action="set_seller_history_session.php" method="POST" style="display:inline-block;">
+        <input type="hidden" name="auction_id_to_bid" value="<?php echo $auction['auction_id']; ?>">
+        <button type="submit" class="btn btn-outline-dark">Bid history</button>
+    </form>
 
+    <?php if (!$is_in_watchlist): ?>
+        <a href="../Includes/add_to_watchlist.php?auction_id=<?= (int)$auction['auction_id']; ?>"
+           class="btn btn-outline-primary mt-2">
+            ❤️ Add to Watchlist
+        </a>
+    <?php else: ?>
+        <a href="../Includes/remove_from_watchlist.php?auction_id=<?= (int)$auction['auction_id']; ?>"
+           class="btn btn-outline-secondary mt-2">
+            ❌ Remove from Watchlist
+        </a>
+    <?php endif; ?>
+</td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

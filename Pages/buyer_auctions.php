@@ -5,8 +5,54 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/recommend.php';
+require_once __DIR__ . '/../includes/notify.php';   // 👈 NEW
 
+// 👇 Mark notification as read when coming from notifications page
+if (isset($_GET['mark_read']) && ctype_digit($_GET['mark_read'])) {
+    mark_notification_read((int)$_GET['mark_read']);
+}    
 ?>
+<?php
+// ✅ Feedback banner for watchlist actions
+if (isset($_GET['watch'])) {
+    $msg   = '';
+    $class = 'info';
+
+    switch ($_GET['watch']) {
+        case 'success':
+            $msg   = '✅ Added to your watchlist!';
+            $class = 'success';
+            break;
+        case 'exists':
+            $msg   = 'ℹ️ This auction is already in your watchlist.';
+            $class = 'warning';
+            break;
+        case 'removed':
+            $msg   = '❌ Removed from your watchlist.';
+            $class = 'secondary';
+            break;
+        case 'login':
+            $msg   = 'Please log in to manage your watchlist.';
+            $class = 'warning';
+            break;
+        case 'invalid':
+            $msg   = 'Invalid request.';
+            $class = 'danger';
+            break;
+        case 'missing':
+            $msg   = 'That auction no longer exists.';
+            $class = 'danger';
+            break;
+    }
+
+    if ($msg) {
+        echo '<div class="alert alert-' . htmlspecialchars($class) . '" style="margin:10px 0;">'
+           . htmlspecialchars($msg)
+           . '</div>';
+    }
+}
+?>
+
 
 <head>
 <style>
@@ -23,14 +69,12 @@ require_once __DIR__ . '/../includes/recommend.php';
 
 <?php
 
-
     $bidder_id = current_user_id(); 
     date_default_timezone_set('Europe/London');
     $current_time = date('Y-m-d H:i:s');
 
-    // filter auctions by current_status, default showing all auctions ended and running
-
     $category_filter = trim($_GET['auction_filter'] ?? 'every_auction');
+    $filter_category = trim($_GET['filter_category'] ?? 'every_category');
     $search_q_raw = trim($_GET['q'] ?? '');
     $search_q = $search_q_raw !== '' ? $search_q_raw : '';
 
@@ -52,17 +96,49 @@ require_once __DIR__ . '/../includes/recommend.php';
         }
     }
 
+    // -----------------------------
+    // Filter auctions by status
+    // -----------------------------
+    $conditions = [];
+
     switch ($category_filter) {
         case 'running':
-            $where_clause = "WHERE a.current_status = 'running'";
+            $conditions[] = "a.current_status = 'running'";
             break;
         case 'ended':
-            $where_clause = "WHERE a.current_status = 'ended'";
+            $conditions[] = "a.current_status = 'ended'";
             break;
         default:
-            $where_clause = "WHERE a.current_status IN ('running','ended')";
+            $conditions[] = "a.current_status IN ('running','ended')";
             break;
     }
+
+    // -----------------------------
+    // Filter auctions by category
+    // -----------------------------
+    if ($filter_category !== 'every_category') {
+        try {
+            $stmt_cat = $pdo->prepare("SELECT category_id FROM categories WHERE name = ?");
+            $stmt_cat->execute([$filter_category]);
+            $cat_id = $stmt_cat->fetchColumn();
+
+            if ($cat_id) {
+                // parent_category_id or category_id depending on your schema
+                $conditions[] = "c.parent_category_id = " . (int)$cat_id;
+            }
+        } catch (Exception $e) {
+            error_log('Category lookup failed: ' . $e->getMessage());
+        }
+    }
+
+    // -----------------------------
+    // Build final WHERE clause
+    // -----------------------------
+    $final_where_sql = '';
+    if (!empty($conditions)) {
+        $final_where_sql = 'WHERE ' . implode(' AND ', $conditions);
+    }
+
 
     // update ended auctions
     $sql_update_ended = "UPDATE auctions SET current_status = 'ended'
@@ -83,7 +159,8 @@ require_once __DIR__ . '/../includes/recommend.php';
     FROM auctions a
     LEFT JOIN items i ON a.item_id = i.item_id
     INNER JOIN users u ON i.seller_id = u.user_id
-    $where_clause
+    INNER JOIN categories c ON i.category_id = c.category_id
+    $final_where_sql
     ORDER BY a.end_time DESC";
 
     $stmt_buyer_auctions = $pdo->prepare($sql_buyer_auctions);
@@ -141,7 +218,7 @@ require_once __DIR__ . '/../includes/recommend.php';
     }
 
     // Build personalised recommendations for this user (E6 feature)
-    $recommended_auctions = build_full_recommendation_list($bidder_id, 3);
+    $recommended_auctions = get_recommendations($bidder_id, 3);
 
 ?>
 
@@ -173,7 +250,19 @@ require_once __DIR__ . '/../includes/recommend.php';
             </select>
         <br><br>
     </form>
-    
+
+    <form action="buyer_auctions.php" method="get">
+
+        <label for="filter_category">Filter Auctions by category:</label>
+        <br>
+            <select name="filter_category" id = "filter_category" onchange="this.form.submit()">
+                <option value="every_category">All categories</option>
+                <option value ="Electronics & Technology" <?php if ($filter_category == 'Electronics & Technology') echo 'selected'; ?>>Electronics</option>
+                <option value="Fashion & Apparel"<?php if ($filter_category == 'Fashion & Apparel') echo 'selected'; ?>>Fashion</option>
+            </select>
+        <br><br>
+    </form>
+
     <?php if (count($auctions) > 0): ?>
         <table class="table table-striped auction-table mx-auto d-block">
             <thead>
@@ -253,10 +342,13 @@ require_once __DIR__ . '/../includes/recommend.php';
             ❤️ Add to Watchlist
         </a>
     <?php else: ?>
-        <span style="margin-left:6px; color:green; font-weight:bold;">
-            ✓ In Watchlist
-        </span>
-    <?php endif; ?>
+    <a href="../Includes/remove_from_watchlist.php?auction_id=<?php echo $auction['auction_id']; ?>"
+       class="btn btn-outline-secondary"
+       style="margin-left:6px;">
+        Remove From Watchlist
+    </a>
+<?php endif; ?>
+
 </td>
 
 </tr>
