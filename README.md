@@ -130,36 +130,55 @@ Database: `auction_db`
 
 ```
 auction-site/
-├── includes/
-│   ├── db.php
-│   ├── helpers.php
-│   ├── logger.php
-│   ├── header.php
-│   ├── footer.php
-│   └── mail_helper.php
+├── Database/
+│   ├── schema.sql          # Full database schema (tables, constraints, seed categories)
+│   └── queries.sql         # Core SELECT/INSERT/UPDATE/DELETE queries used by the app
+│
+├── Includes/
+│   ├── active_proxy.php        # Logic to activate / manage proxy bidding
+│   ├── add_to_watchlist.php    # Add an auction to the watchlist
+│   ├── db.php                  # Main PDO database connection (used in production)
+│   ├── db1.php                 # Alternative / test DB connection (for local debugging)
+│   ├── footer.php              # Shared footer layout
+│   ├── header.php              # Shared header + navigation bar
+│   ├── helpers.php             # Helper functions (sessions, auth, formatting, etc.)
+│   ├── logger.php              # Simple logging utilities
+│   ├── notify.php              # Notification helpers (outbid / win / end, etc.)
+│   ├── proxy.php               # Proxy-bidding backend logic
+│   ├── recommend.php           # Recommendation / personalised suggestion logic
+│   └── remove_from_watchlist.php  # Remove auction from watchlist
 │
 ├── Pages/
-│   ├── register.php
-│   ├── login.php
-│   ├── logout.php
-│   ├── profile.php
-│   ├── profile_edit.php
-│   ├── confirm_email.php
-│   ├── forgot_password.php
-│   ├── reset_password.php
-│   ├── create_auction.php
-│   ├── browse.php
-│   └── place_bid.php
+│   ├── Images/                 # Uploaded item images (runtime, not versioned)
+│   │   └── …                   # Image files created at upload time
+│   │
+│   ├── bid_history.php         # User bid history
+│   ├── buyer_auctions.php      # Buyer view of active auctions
+│   ├── confirm_email.php       # Email confirmation landing page
+│   ├── create_auction.php      # Form + logic to create a new auction
+│   ├── create_bid.php          # Place a bid on an auction
+│   ├── create_item.php         # Create a new item (title/desc/category/images)
+│   ├── forgot_password.php     # Start password reset workflow
+│   ├── login.php               # User login
+│   ├── logout.php              # Session logout
+│   ├── notifications.php       # List of notifications for the current user
+│   ├── profile.php             # View own profile
+│   ├── profile_edit.php        # Edit profile details
+│   ├── register.php            # User registration
+│   ├── reset_password.php      # Complete password reset
+│   ├── seller_auctions.php     # Seller’s auctions (status, bids, prices)
+│   ├── seller_items.php        # Items created by the seller
+│   ├── seller_profile.php      # Public/extended seller profile
+│   ├── set_auction_session.php # Helper endpoints for storing auction state in session
+│   ├── set_bid_session.php
+│   ├── set_history_session.php
+│   ├── set_seller_history_session.php
+│   ├── test_db.php             # Simple DB connectivity test page
+│   └── watchlist.php           # User watchlist view
 │
-├── assets/
-│   ├── css/
-│   └── js/
-│
-├── sql/
-│   └── schema.sql
-│
-├── README.md
-└── vendor/ (Composer dependencies)
+├── ERD_draft1.png              # ER diagram draft of the database
+├── LICENSE
+└── README.md                   # This file
 ```
 
 ---
@@ -193,11 +212,11 @@ auction-site/
 
 ## 👥 Authors
 **Group Project Members**
-- Member A — Auction Management & Items Module  
-- Member B — Bidding & Transaction Module  
-- Member C — User Management & Security Module
-- Member D — Search, Filtering & Watchlist Module  
-- Member E — UI/UX & Testing Module  
+- Member A — System Design & Report Writing Lead  
+- Member B — Database Implementation & SQL Developer  
+- Member C — User Management & Role Module (Backend Developer)
+- Member D — Auction Logic & Bidding System Lead  
+- Member E — Advanced Features & System Integration Lead  
 
 ---
 
