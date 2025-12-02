@@ -146,7 +146,7 @@ WHERE a.current_status='running' AND a.end_time>NOW()
 ORDER BY a.end_time ASC
 LIMIT ? OFFSET ?;
 
--- 3.2 LIKE 兜底搜索
+-- 3.2 LIKE the bottom search
 WITH top_bid AS (
   SELECT auction_id, bidder_id, amount, bid_time,
          ROW_NUMBER() OVER (PARTITION BY auction_id ORDER BY amount DESC, bid_time ASC) AS rn
