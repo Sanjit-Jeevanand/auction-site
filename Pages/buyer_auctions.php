@@ -34,6 +34,24 @@ require_once __DIR__ . '/../includes/recommend.php';
     $search_q_raw = trim($_GET['q'] ?? '');
     $search_q = $search_q_raw !== '' ? $search_q_raw : '';
 
+    // --- Record search for logged-in buyers/both users ---
+    // If the current user is signed in and performed a text search, store it on their profile.
+    if ($search_q !== '' && !empty($bidder_id)) {
+        // Only record for users whose role is buyer or both.
+        $user_role = $_SESSION['role'] ?? null;
+        if ($user_role === 'buyer' || $user_role === 'both') {
+            try {
+                $stmt_rec = $pdo->prepare(
+                    "UPDATE users SET last_search = :q, last_search_at = NOW(), total_searches = COALESCE(total_searches,0) + 1 WHERE user_id = :uid AND role IN ('buyer','both')"
+                );
+                $stmt_rec->execute(['q' => $search_q, 'uid' => $bidder_id]);
+            } catch (Exception $e) {
+                // fail silently — search should not break auction listing
+                error_log('Search history save failed: ' . $e->getMessage());
+            }
+        }
+    }
+
     switch ($category_filter) {
         case 'running':
             $where_clause = "WHERE a.current_status = 'running'";
