@@ -2,75 +2,84 @@
 
 /* ==============================
    COLLABORATIVE FILTERING SYSTEM
-   Stable, deterministic, scalable
+   Fully working version
    ============================== */
 
 function get_recommendations($user_id, $limit = 5) {
     global $pdo;
 
-    // If not logged in, just show random auctions
+    // If not logged in, deterministic fallback
     if (!$user_id) {
         return get_random_recommendations($limit);
     }
 
     /* -----------------------------
-       STEP 1 — User interacted auctions
+       STEP 1 — Auctions THIS user interacted with
        ----------------------------- */
     $stmt = $pdo->prepare("
         SELECT DISTINCT auction_id
         FROM watchlist WHERE user_id = ?
+
         UNION
+
         SELECT DISTINCT auction_id
         FROM bids WHERE bidder_id = ?
     ");
     $stmt->execute([$user_id, $user_id]);
     $user_items = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+    // Cold start
     if (empty($user_items)) {
         return get_random_recommendations($limit);
     }
 
     /* -----------------------------
-       STEP 2 — Similar users
+       STEP 2 — Find similar users
        ----------------------------- */
     $in = implode(',', array_fill(0, count($user_items), '?'));
 
-$sql = "
-    SELECT DISTINCT user_id FROM watchlist
-    WHERE auction_id IN ($in) AND user_id != ?
+    $sql = "
+        SELECT DISTINCT user_id
+        FROM watchlist
+        WHERE auction_id IN ($in)
+        AND user_id != ?
 
-    UNION
+        UNION
 
-    SELECT DISTINCT bidder_id FROM bids
-    WHERE auction_id IN ($in) AND bidder_id != ?
+        SELECT DISTINCT bidder_id
+        FROM bids
+        WHERE auction_id IN ($in)
+        AND bidder_id != ?
 
-    UNION
+        UNION
 
-    -- Users who bid on auctions that similar users have bid on
-    SELECT DISTINCT b2.bidder_id
-    FROM bids b1
-    JOIN bids b2 ON b1.auction_id = b2.auction_id
-    WHERE b1.bidder_id = ? AND b2.bidder_id != ?
-";
+        SELECT DISTINCT b2.bidder_id
+        FROM bids b1
+        JOIN bids b2
+          ON b1.auction_id = b2.auction_id
+        WHERE b1.bidder_id = ?
+          AND b2.bidder_id != ?
+    ";
 
-$params = array_merge(
-    $user_items,
-    [$user_id],
-    $user_items,
-    [$user_id],
-    [$user_id],
-    [$user_id]
-);
+    $params = array_merge(
+        $user_items, [$user_id],
+        $user_items, [$user_id],
+        [$user_id, $user_id]
+    );
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$similar_users = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $similar_users = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+    // If nobody similar, fallback
+    if (empty($similar_users)) {
+        return get_random_recommendations($limit);
+    }
 
-
+    $similar_users = array_unique(array_map('intval', $similar_users));
 
     /* -----------------------------
-       STEP 3 — What those users touched
+       STEP 3 — What similar users interact with
        ----------------------------- */
     $in_users = implode(',', array_fill(0, count($similar_users), '?'));
 
@@ -91,15 +100,14 @@ $similar_users = $stmt->fetchAll(PDO::FETCH_COLUMN);
         ORDER BY strength DESC
     ";
 
-    // ⚠️ IMPORTANT: we use IN (...) twice, so we need the list twice
     $params_users = array_merge($similar_users, $similar_users);
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params_users);
-    $ranked = $stmt->fetchAll(PDO::FETCH_KEY_PAIR); // auction_id => strength
+    $ranked = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
     /* -----------------------------
-       STEP 4 — Remove auctions user already saw
+       STEP 4 — Remove already seen auctions
        ----------------------------- */
     $recommend_ids = array_diff(array_keys($ranked), $user_items);
 
@@ -115,7 +123,7 @@ $similar_users = $stmt->fetchAll(PDO::FETCH_COLUMN);
     $in_final = implode(',', array_fill(0, count($recommend_ids), '?'));
 
     $sql = "
-        SELECT 
+        SELECT
             a.auction_id,
             i.title,
             u.display_name AS seller,
@@ -136,14 +144,15 @@ $similar_users = $stmt->fetchAll(PDO::FETCH_COLUMN);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+
 /* ==============================
-   RANDOM FALLBACK
+   FALLBACK FUNCTION
    ============================== */
 function get_random_recommendations($limit = 5) {
     global $pdo;
 
     $stmt = $pdo->prepare("
-        SELECT 
+        SELECT
             a.auction_id,
             i.title,
             u.display_name AS seller,
@@ -158,6 +167,7 @@ function get_random_recommendations($limit = 5) {
         ORDER BY a.start_time ASC
         LIMIT ?
     ");
+
     $stmt->execute([$limit]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
