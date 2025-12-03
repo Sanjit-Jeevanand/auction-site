@@ -1,8 +1,8 @@
 <?php
-require_once __DIR__ . '/../Includes/db.php';
-require_once __DIR__ . '/../Includes/helpers.php';
-require_once __DIR__ . '/../Includes/header.php';
-require_once __DIR__ . '/../Includes/recommend.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/recommend.php';
 
 // ✅ Start session safely
 if (session_status() === PHP_SESSION_NONE) {
@@ -45,6 +45,46 @@ $watchlist = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <!-- 🧾 Watchlist Section -->
 <div class="container mt-4">
     <h2>My Watchlist</h2>
+        <?php
+if (isset($_GET['watch'])) {
+    $msg = '';
+    $class = 'info';
+
+    switch ($_GET['watch']) {
+        case 'success':
+            $msg = '✅ Added to your watchlist.';
+            $class = 'success';
+            break;
+        case 'exists':
+            $msg = 'ℹ️ This auction is already in your watchlist.';
+            $class = 'warning';
+            break;
+        case 'removed':
+            $msg = '❌ Removed from your watchlist.';
+            $class = 'secondary';
+            break;
+        case 'login':
+            $msg = 'Please log in to manage your watchlist.';
+            $class = 'warning';
+            break;
+        case 'invalid':
+            $msg = 'Invalid request.';
+            $class = 'danger';
+            break;
+        case 'missing':
+            $msg = 'That auction no longer exists or is not in your watchlist.';
+            $class = 'danger';
+            break;
+    }
+
+    if ($msg) {
+        echo '<div class="alert alert-' . htmlspecialchars($class) . ' mt-3">'
+           . htmlspecialchars($msg)
+           . '</div>';
+    }
+}
+?>
+
 
     <?php if (!empty($watchlist)): ?>
         <table class="table table-striped mt-3">
@@ -81,7 +121,7 @@ $watchlist = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <?php
 // 🧠 Collaborative Recommendation Section
 if (!empty($watchlist)) {
-    $recommendations = get_recommendations($user_id);
+    $recommendations = get_recommendations($user_id, 3);
 } else {
     $recommendations = [];
 }
